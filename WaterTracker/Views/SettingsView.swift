@@ -122,8 +122,16 @@ struct SettingsView: View {
         
         for hour in stride(from: startHour, through: endHour, by: currentSettings.notificationInterval) {
             let content = UNMutableNotificationContent()
-            content.title = "Time to Hydrate!"
-            content.body = "Don't forget to drink some water 💧"
+            content.title = "Time to Hydrate! 💧"
+            
+            // Calculate remaining water needed
+            let remainingWater = getRemainingWaterForToday()
+            if remainingWater > 0 {
+                content.body = "You need \(remainingWater) more oz to reach your daily goal of \(currentSettings.dailyGoal) oz!"
+            } else {
+                content.body = "Great job! You've reached your daily goal of \(currentSettings.dailyGoal) oz! Keep it up! 🎉"
+            }
+            
             content.sound = .default
             
             var dateComponents = DateComponents()
@@ -135,6 +143,19 @@ struct SettingsView: View {
             
             UNUserNotificationCenter.current().add(request)
         }
+    }
+    
+    private func getRemainingWaterForToday() -> Int {
+        let waterRequest = FetchDescriptor<WaterEntry>()
+        guard let waterEntries = try? modelContext.fetch(waterRequest) else { return currentSettings.dailyGoal }
+        
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let todayIntake = waterEntries
+            .filter { calendar.isDate($0.timestamp, inSameDayAs: today) }
+            .reduce(0) { $0 + $1.amount }
+        
+        return max(currentSettings.dailyGoal - todayIntake, 0)
     }
     
     private func cancelAllNotifications() {
