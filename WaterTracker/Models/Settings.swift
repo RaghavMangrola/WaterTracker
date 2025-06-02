@@ -9,7 +9,7 @@ class Settings {
     var notificationEndTime: Date
     var notificationInterval: Int // in hours
     
-    init(dailyGoal: Int = 2000, 
+    init(dailyGoal: Int = 100, // 100 oz
          notificationsEnabled: Bool = false,
          notificationStartTime: Date = Calendar.current.date(from: DateComponents(hour: 8)) ?? Date(),
          notificationEndTime: Date = Calendar.current.date(from: DateComponents(hour: 22)) ?? Date(),

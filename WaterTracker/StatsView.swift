@@ -2,7 +2,22 @@ import SwiftUI
 import SwiftData
 
 struct StatsView: View {
-    @Query(sort: \WaterEntry.timestamp, order: .reverse) private var waterEntries: [WaterEntry]
+    @Environment(\.modelContext) private var modelContext
+    @State private var waterEntries: [WaterEntry] = []
+    
+    private var currentSettings: Settings {
+        let settingsRequest = FetchDescriptor<Settings>()
+        if let existingSettings = try? modelContext.fetch(settingsRequest).first {
+            // Check if the daily goal is unreasonably high (indicating old ml data)
+            if existingSettings.dailyGoal > 200 {
+                // Reset to a reasonable oz value
+                existingSettings.dailyGoal = 100
+            }
+            return existingSettings
+        } else {
+            return Settings()
+        }
+    }
     
     var totalToday: Int {
         let calendar = Calendar.current
@@ -18,7 +33,7 @@ struct StatsView: View {
                 VStack(alignment: .leading) {
                     Text("Total water consumed:")
                         .font(.headline)
-                    Text("\(totalToday)ml")
+                    Text("\(totalToday) oz")
                         .font(.largeTitle)
                         .foregroundColor(.blue)
                 }
@@ -26,9 +41,9 @@ struct StatsView: View {
             }
             
             Section("Recommendation") {
-                Text("Daily goal: 2000ml")
-                if totalToday < 2000 {
-                    Text("You need \(2000 - totalToday)ml more today")
+                Text("Daily goal: \(currentSettings.dailyGoal) oz")
+                if totalToday < currentSettings.dailyGoal {
+                    Text("You need \(currentSettings.dailyGoal - totalToday) oz more today")
                         .foregroundColor(.orange)
                 } else {
                     Text("Great job! You've met your daily goal!")
@@ -37,5 +52,18 @@ struct StatsView: View {
             }
         }
         .navigationTitle("Statistics")
+        .onAppear {
+            loadWaterEntries()
+        }
+    }
+    
+    private func loadWaterEntries() {
+        let request = FetchDescriptor<WaterEntry>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        do {
+            waterEntries = try modelContext.fetch(request)
+        } catch {
+            print("Failed to fetch water entries: \(error)")
+            waterEntries = []
+        }
     }
 } 

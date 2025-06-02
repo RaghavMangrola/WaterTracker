@@ -4,14 +4,19 @@ import UserNotifications
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var settings: [Settings]
     @State private var showingAlert = false
     @State private var alertMessage = ""
     
     // Get the first settings object or create one if it doesn't exist
     private var currentSettings: Settings {
-        if let firstSettings = settings.first {
-            return firstSettings
+        let settingsRequest = FetchDescriptor<Settings>()
+        if let existingSettings = try? modelContext.fetch(settingsRequest).first {
+            // Check if the daily goal is unreasonably high (indicating old ml data)
+            if existingSettings.dailyGoal > 200 {
+                // Reset to a reasonable oz value
+                existingSettings.dailyGoal = 100
+            }
+            return existingSettings
         } else {
             let newSettings = Settings()
             modelContext.insert(newSettings)
@@ -22,13 +27,13 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Daily Goal") {
-                Stepper("Goal: \(currentSettings.dailyGoal)ml", 
+                Stepper("Goal: \(currentSettings.dailyGoal) oz", 
                        value: .init(
                         get: { currentSettings.dailyGoal },
                         set: { currentSettings.dailyGoal = $0 }
                        ),
-                       in: 500...5000,
-                       step: 250)
+                       in: 17...169,
+                       step: 8)
             }
             
             Section("Notifications") {

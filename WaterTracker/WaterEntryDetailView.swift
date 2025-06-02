@@ -16,7 +16,10 @@ struct WaterEntryDetailView: View {
     var body: some View {
         Form {
             Section("Details") {
-                Stepper("Amount: \(amount)ml", value: $amount, in: 50...1000, step: 50)
+                Stepper("Amount: \(amount) oz", 
+                       value: $amount, 
+                       in: 1...40, 
+                       step: 1)
                 DatePicker("Time", selection: .constant(entry.timestamp))
                     .disabled(true)
             }
@@ -25,6 +28,15 @@ struct WaterEntryDetailView: View {
         .toolbar {
             Button("Save") {
                 entry.amount = amount
+                
+                // Save the context
+                do {
+                    try modelContext.save()
+                    print("Successfully updated water entry: \(amount) oz")
+                } catch {
+                    print("Failed to save water entry changes: \(error)")
+                }
+                
                 dismiss()
             }
         }

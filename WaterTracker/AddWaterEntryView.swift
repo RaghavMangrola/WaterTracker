@@ -4,12 +4,15 @@ import SwiftData
 struct AddWaterEntryView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @State private var amount = 250
+    @State private var amount: Int = 8
     
     var body: some View {
         NavigationStack {
             Form {
-                Stepper("Amount: \(amount)ml", value: $amount, in: 50...1000, step: 50)
+                Stepper("Amount: \(amount) oz", 
+                       value: $amount, 
+                       in: 1...40, 
+                       step: 1)
             }
             .navigationTitle("Add Water")
             .navigationBarTitleDisplayMode(.inline)
@@ -30,5 +33,13 @@ struct AddWaterEntryView: View {
     private func addEntry() {
         let entry = WaterEntry(amount: amount)
         modelContext.insert(entry)
+        
+        // Save the context
+        do {
+            try modelContext.save()
+            print("Successfully saved water entry: \(amount) oz")
+        } catch {
+            print("Failed to save water entry: \(error)")
+        }
     }
 } 
