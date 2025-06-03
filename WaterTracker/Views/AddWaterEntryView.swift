@@ -38,6 +38,10 @@ struct AddWaterEntryView: View {
         do {
             try modelContext.save()
             print("Successfully saved water entry: \(amount) oz")
+            
+            // Immediately update notifications to reflect updated water intake
+            let settingsViewModel = SettingsViewModel(modelContext: modelContext)
+            settingsViewModel.updateNotificationContentImmediately()
         } catch {
             print("Failed to save water entry: \(error)")
         }

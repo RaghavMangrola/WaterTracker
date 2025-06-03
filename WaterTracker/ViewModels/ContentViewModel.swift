@@ -87,6 +87,10 @@ class ContentViewModel {
         do {
             try modelContext.save()
             loadWaterEntries() // Refresh the list
+            
+            // Immediately update notifications to reflect updated water intake
+            let settingsViewModel = SettingsViewModel(modelContext: modelContext)
+            settingsViewModel.updateNotificationContentImmediately()
         } catch {
             print("Failed to save water entry: \(error)")
         }
@@ -100,6 +104,10 @@ class ContentViewModel {
         do {
             try modelContext.save()
             loadWaterEntries() // Refresh the list
+            
+            // Immediately update notifications to reflect updated water intake
+            let settingsViewModel = SettingsViewModel(modelContext: modelContext)
+            settingsViewModel.updateNotificationContentImmediately()
         } catch {
             print("Failed to delete entries: \(error)")
         }

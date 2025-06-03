@@ -30,6 +30,7 @@ class NotificationService {
             let content = UNMutableNotificationContent()
             content.title = "Time to Hydrate! 💧"
             
+            // Calculate remaining water dynamically
             let remainingWater = max(dailyGoal - currentIntake, 0)
             if remainingWater > 0 {
                 content.body = "You need \(remainingWater) more oz to reach your daily goal of \(dailyGoal) oz!"
@@ -38,6 +39,7 @@ class NotificationService {
             }
             
             content.sound = .default
+            content.categoryIdentifier = "WATER_REMINDER"
             
             var dateComponents = DateComponents()
             dateComponents.hour = hour

@@ -32,6 +32,14 @@ struct WaterTrackerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                    // Reschedule notifications when app becomes active to ensure dynamic content
+                    Task {
+                        let mainContext = modelContainer.mainContext
+                        let settingsViewModel = SettingsViewModel(modelContext: mainContext)
+                        settingsViewModel.rescheduleNotificationsIfNeeded()
+                    }
+                }
         }
         .modelContainer(modelContainer)
     }

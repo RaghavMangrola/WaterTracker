@@ -8,6 +8,7 @@ class SettingsViewModel {
     private var modelContext: ModelContext
     var showingAlert = false
     var alertMessage = ""
+    private var lastRescheduleTime: Date = Date.distantPast
     
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -97,11 +98,20 @@ class SettingsViewModel {
             return
         }
         
+        // Get current hour to avoid scheduling notifications for past times today
+        let currentHour = calendar.component(.hour, from: Date())
+        let currentMinute = calendar.component(.minute, from: Date())
+        
         for hour in stride(from: startHour, through: endHour, by: currentSettings.notificationInterval) {
+            // Skip notifications that would have already fired today
+            if hour <= currentHour && currentMinute > 0 {
+                continue
+            }
+            
             let content = UNMutableNotificationContent()
             content.title = "Time to Hydrate! 💧"
             
-            // Calculate remaining water needed
+            // Calculate current remaining water dynamically at scheduling time
             let remainingWater = getRemainingWaterForToday()
             if remainingWater > 0 {
                 content.body = "You need \(remainingWater) more oz to reach your daily goal of \(currentSettings.dailyGoal) oz!"
@@ -110,6 +120,7 @@ class SettingsViewModel {
             }
             
             content.sound = .default
+            content.categoryIdentifier = "WATER_REMINDER"
             
             var dateComponents = DateComponents()
             dateComponents.hour = hour
@@ -118,12 +129,44 @@ class SettingsViewModel {
             let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
             let request = UNNotificationRequest(identifier: "waterReminder-\(hour)", content: content, trigger: trigger)
             
-            UNUserNotificationCenter.current().add(request)
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("Failed to schedule notification for \(hour):00 - \(error)")
+                } else {
+                    print("Scheduled notification for \(hour):00 with \(remainingWater) oz remaining")
+                }
+            }
         }
     }
     
     func cancelAllNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+    }
+    
+    // MARK: - Public method to reschedule notifications when water intake changes
+    
+    func rescheduleNotificationsIfNeeded() {
+        guard currentSettings.notificationsEnabled else { return }
+        
+        // Only reschedule if enough time has passed (minimum 5 minutes) or if it's the first reschedule
+        let timeSinceLastReschedule = Date().timeIntervalSince(lastRescheduleTime)
+        guard timeSinceLastReschedule > 300 || lastRescheduleTime == Date.distantPast else {
+            return
+        }
+        
+        lastRescheduleTime = Date()
+        scheduleNotifications()
+    }
+    
+    // MARK: - Immediate notification content update
+    
+    func updateNotificationContentImmediately() {
+        // This method provides immediate updates for better user experience
+        guard currentSettings.notificationsEnabled else { return }
+        
+        // Always update content regardless of timing constraints
+        lastRescheduleTime = Date()
+        scheduleNotifications()
     }
     
     // MARK: - Private Methods
